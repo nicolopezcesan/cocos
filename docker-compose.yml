@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: dev_database
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: 13RIIZd_jhUkM5LsuWzWdRyPlFJsmnVj
+    volumes:
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
