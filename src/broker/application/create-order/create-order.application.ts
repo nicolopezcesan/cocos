@@ -1,151 +1,47 @@
 import { BadRequestException, Controller, Logger } from '@nestjs/common';
-import { ORDER_SIDE, ORDER_STATUS, ORDER_TYPE } from 'src/broker/infraestructure/enums/order.enum';
-import { BalanceService } from 'src/broker/infraestructure/services/balance.service';
-import { MarketService } from 'src/broker/infraestructure/services/market.service';
-import { OrderService } from 'src/broker/infraestructure/services/order.service';
+import { ORDER_SIDE } from 'src/broker/infraestructure/enums/order.enum';
 import { CreateOrderDto } from 'src/broker/infraestructure/dtos/create-order/create-order.dto';
+import { CreateOrderBuyApp } from './create-order-buy/create-order-buy.application';
+import { CreateOrderSellApp } from './create-order-sell/create-order-sell.application';
+import { CreateOrderCashInApp } from './create-order-cash-in/create-order-cash-in.application';
+import { CreateOrderCashOutApp } from './create-order-cash-out/create-order-cash-out.application';
 
-const ERROR_MESSAGES = {
-  INSUFFICIENT_FUNDS: 'Balance cannot be less than the transaction amount',
-  INSUFFICIENT_ASSETS: 'The amount of assets to be sold cannot be greater than your current assets',
-  MISSES_DATA: 'Missing data in the request',
-  INVALID_ORDER_SIDE: 'Invalid order side',
-};
+interface ICreateOrderApp {
+  execute(createOrderDto: CreateOrderDto): Promise<any>;
+}
 
-const USER_ID: number = 2;
+export interface CreateOrderResponse {
+  message: string;
+}
 
 @Controller()
-export class CreateOrderApp {
+export class CreateOrderApp implements ICreateOrderApp {
   private readonly logger = new Logger(CreateOrderApp.name);
 
   constructor(
-    private readonly balanceService: BalanceService,
-    private readonly marketService: MarketService,
-    private readonly orderService: OrderService,
+    private readonly createOrderBuyApp: CreateOrderBuyApp,
+    private readonly createOrderSellApp: CreateOrderSellApp,
+    private readonly createOrderCashInApp: CreateOrderCashInApp,
+    private readonly createOrderCashOutApp: CreateOrderCashOutApp,
   ) { }
 
-  async execute(createOrderDto: CreateOrderDto): Promise<any> {
-    await this.validateOrder(createOrderDto);
+  async execute(createOrderDto: CreateOrderDto): Promise<CreateOrderResponse> {
+    return await this.createOrder(createOrderDto);
   }
 
-  async validateOrder(createOrderDto: CreateOrderDto): Promise<any> {
+  private async createOrder(createOrderDto: CreateOrderDto): Promise<CreateOrderResponse> {
     switch (createOrderDto.side) {
       case ORDER_SIDE.BUY:
-        const newOrder = await this.validateAndCreateBuyOrder(createOrderDto);
-        await this.orderService.createBuyOrder(newOrder);
-        break;
-
+        return await this.createOrderBuyApp.execute(createOrderDto);
       case ORDER_SIDE.SELL:
-        await this.validateSellOrder(createOrderDto);
-        break;
-
+        return await this.createOrderSellApp.execute(createOrderDto);
       case ORDER_SIDE.CASH_IN:
-        await this.createCashIn(createOrderDto);
-        break;
-
+        return await this.createOrderCashInApp.execute(createOrderDto);
       case ORDER_SIDE.CASH_OUT:
-        await this.createCashOut(createOrderDto);
-        break;
-
+        return await this.createOrderCashOutApp.execute(createOrderDto);
       default:
-        throw new BadRequestException(ERROR_MESSAGES.INVALID_ORDER_SIDE);
+        this.logger.error('Invalid order side');
+        throw new BadRequestException('Invalid order side');
     }
   }
-
-  async validateAndCreateBuyOrder(createOrderDto: CreateOrderDto): Promise<any> {
-    const availableAccountBalance = await this.balanceService.getAvailableBalanceByAccount(USER_ID);
-    const lastAssetPrice = await this.getMarketData([createOrderDto.instrumentid]);
-
-    if (createOrderDto.type === ORDER_TYPE.MARKET) {
-      return await this.validateMarketOrder(createOrderDto, availableAccountBalance, lastAssetPrice);
-    } else if (createOrderDto.type === ORDER_TYPE.LIMIT) {
-      return await this.validateLimitOrder(createOrderDto, availableAccountBalance);
-    }
-  }
-
-  private async validateMarketOrder(createOrderDto: CreateOrderDto, availableAccountBalance, lastAssetPrice): Promise<any> {
-    let quantityToBuy = 0;
-
-    if (createOrderDto.amount) {
-      if (availableAccountBalance < createOrderDto.amount) {
-        this.logger.error(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-        throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-      }
-
-      const maxQuantityCanBuy = Math.floor(createOrderDto.amount / lastAssetPrice);
-      if (maxQuantityCanBuy === 0) {
-        this.logger.error(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-        throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-      }
-
-      quantityToBuy = maxQuantityCanBuy;
-    }
-
-    if (createOrderDto.size) {
-      if (availableAccountBalance < createOrderDto.size * lastAssetPrice) {
-        this.logger.error(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-        throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-      }
-      quantityToBuy = createOrderDto.size;
-    }
-
-    const newOrder = {
-      instrumentid: createOrderDto.instrumentid,
-      size: quantityToBuy,
-      side: createOrderDto.side,
-      type: createOrderDto.type,
-      price: lastAssetPrice,
-      status: ORDER_STATUS.FILLED,
-      datetime: new Date(),
-      userid: USER_ID,
-    };
-
-    return newOrder;
-  }
-
-  private async validateLimitOrder(createOrderDto: CreateOrderDto, availableAccountBalance): Promise<any> {
-    if (availableAccountBalance < createOrderDto.size * createOrderDto.price) {
-      this.logger.error(ERROR_MESSAGES.INSUFFICIENT_ASSETS);
-      throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_ASSETS);
-    }
-
-    const newOrder = {
-      instrumentid: createOrderDto.instrumentid,
-      size: createOrderDto.size,
-      side: createOrderDto.side,
-      type: createOrderDto.type,
-      price: createOrderDto.price,
-      status: ORDER_STATUS.NEW,
-      datetime: new Date(),
-      userid: USER_ID,
-    };
-
-    return newOrder;
-  }
-
-  private async getMarketData(instrumentsId: Array<number>): Promise<number> {
-    const [assetInMarket] = await this.marketService.getLastMarketData({ instruments: instrumentsId });
-    return parseFloat(assetInMarket.close);
-  }
-
-  async validateSellOrder(createOrderDto: CreateOrderDto): Promise<any> {
-    const quantityOfAsset = await this.balanceService.getQuantityAssetByAccount(createOrderDto.instrumentid, USER_ID);
-    
-    if (quantityOfAsset < createOrderDto.size) {
-      this.logger.error(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-      throw new BadRequestException(ERROR_MESSAGES.INSUFFICIENT_FUNDS);
-    }
-    
-    const lastAssetPrice = await this.getMarketData([createOrderDto.instrumentid]);
-    await this.orderService.createSellOrder(createOrderDto.instrumentid, quantityOfAsset, lastAssetPrice, USER_ID);
-  }
-
-  private async createCashIn(createOrderDto: CreateOrderDto): Promise<void> {
-    await this.orderService.createCashInOrder(createOrderDto);
-  }
-
-  private async createCashOut(createOrderDto: CreateOrderDto): Promise<void> {
-    await this.orderService.createCashOutOrder(createOrderDto);
-  }
-
 }

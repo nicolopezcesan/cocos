@@ -1,12 +1,22 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException, HttpStatus, BadRequestException } from "@nestjs/common";
-import { Observable, map, catchError, throwError } from "rxjs";
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  HttpException,
+  HttpStatus,
+  BadRequestException,
+} from '@nestjs/common';
+import { Observable, map, catchError, throwError } from 'rxjs';
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
       map((res: unknown) => this.responseHandler(res, context)),
-      catchError((err: HttpException) => throwError(() => this.handleError(err, context)))
+      catchError((err: HttpException) =>
+        throwError(() => this.handleError(err, context)),
+      ),
     );
   }
 
@@ -32,10 +42,10 @@ export class ResponseInterceptor implements NestInterceptor {
       status: false,
       statusCode: status,
       message: message,
-      data: null,
+      // @ts-ignore
+      data: error.message,
     });
   }
-
 
   responseHandler(res: unknown, context: ExecutionContext) {
     const ctx = context.switchToHttp();

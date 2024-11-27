@@ -1,146 +1,136 @@
-import { Controller } from '@nestjs/common';
-import { ORDER_SIDE, ORDER_STATUS, ORDER_TYPE } from 'src/broker/infraestructure/enums/order.enum';
+import { Controller, HttpException, HttpStatus, Inject, Logger } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { number } from 'joi';
+import { async } from 'rxjs';
+import { IOrder } from 'src/broker/domain/order.domain';
+import { Portfolio } from 'src/broker/domain/portfolio.domain';
 import { BalanceService } from 'src/broker/infraestructure/services/balance.service';
 import { MarketService } from 'src/broker/infraestructure/services/market.service';
 
-interface IOrder {
-  id: number;
-  size: number;
-  price: string;
-  type: ORDER_TYPE;
-  side: ORDER_SIDE;
-  status: ORDER_STATUS;
-  datetime: string;
+interface IGetPortfolioApp {
+  execute(): Promise<Portfolio>;
+}
+
+interface IAssetsBalanceFromOrders {
+  quantityOfBuy: number,
+  currentAssets: number,
+  totalBuyAmount: number,
+}
+
+interface IYieldFromAssets {
   instrumentid: number;
-  instrument: {
-    ticker: string;
-    name: string;
-    type: string;
-  };
+  ticker: string;
+  quantity: number;
+  lastMarketPrice: number;
+  averageBuyPrice: number;
+  balance: number;
+  yieldAmount: string;
+  yieldPercentage: string;
 }
-
-interface IBalance {
-  availableBalance: number,
-  totalBalance: number,
-  orders: any,
-  assets: any,
-}
-
-const USER_ID: number = 2;
 
 @Controller()
-export class GetPortfolioApp {
+export class GetPortfolioApp implements IGetPortfolioApp {
+  private readonly logger = new Logger(MarketService.name);
+  
   constructor(
     private readonly balanceService: BalanceService,
     private readonly marketService: MarketService,
+    @Inject(REQUEST) private request: Request & { userId: number },
   ) { }
 
-  async execute(): Promise<any> {
-    const orders = await this.balanceService.getOrders(USER_ID);
-
-    const { availableBalance, assetsBalance } = this.calculateBalanceFromOrders(orders);
-    const assets = await this.calculateYieldsFromAssetsBalance(assetsBalance);
-
-    const balanceInAssets = assets.reduce((acc, assets) => {
-      return acc += assets.balance;
-    }, 0)
-
-    return { 
-      availableBalance,
-      totalBalance: availableBalance + balanceInAssets, 
-      assets,
-    };
-  }
-
-  private calculateBalanceFromOrders(orders: IOrder[]): any {
-    const initialBalance: any = {
-      availableBalance: 0,
-      assets: {}
-    };
-
-    const processedOrders = orders.reduce((acc, order) => {
-      this.calculateAvailableBalance(acc, order);
-      this.calculateAssetBalance(acc, order);
-      return acc;
-    }, initialBalance);
-
-    return {
-      availableBalance: processedOrders.availableBalance,
-      assetsBalance: processedOrders.assets,
-    };
-  }
-
-  // Usar método del balanceService
-  private calculateAvailableBalance(balance: any, order: IOrder): void {
-    const amount = parseFloat(order.size.toString()) * parseFloat(order.price);
-
-    switch (order.side) {
-      case ORDER_SIDE.CASH_IN:
-      case ORDER_SIDE.SELL:
-        balance.availableBalance += amount;
-        break;
-      case ORDER_SIDE.CASH_OUT:
-      case ORDER_SIDE.BUY:
-        balance.availableBalance -= amount;
-        break;
+  async execute(): Promise<Portfolio> {
+    try {
+      const orders = await this.balanceService.getOrders(this.request.userId);
+      const availableBalance = await this.balanceService.getAvailableBalanceByAccount(this.request.userId, orders);
+  
+      const assetsBalance = this.calculateBalanceFromOrders(orders);
+      const assetsYield = await this.calculateYieldFromAssets(assetsBalance);
+      const balanceInAssets = this.calculateBalanceInAssets(assetsYield);
+  
+      return new Portfolio(
+        availableBalance,
+        availableBalance + balanceInAssets,
+        assetsYield,
+      );
+    } catch (error) {
+      this.logger.error('Error trying to get portfolio', error);
+      throw error;
     }
   }
 
-  private calculateAssetBalance(balance: any, order: IOrder): void {
-    if ([ORDER_SIDE.BUY, ORDER_SIDE.SELL].includes(order.side) && order.status === ORDER_STATUS.FILLED) {
-      const { instrumentid } = order;
+  private calculateBalanceFromOrders(orders: IOrder[]): IAssetsBalanceFromOrders {
+    try {
+      const processedOrders = orders.reduce((acc, order) => {
+        if (!order.isBuyOrSell() || !order.isStatusFilled()) {
+          return acc;
+        }
+  
+        const { instrumentid } = order;
+  
+        if (!acc[instrumentid]) {
+          acc[instrumentid] = {
+            quantityOfBuy: 0,
+            currentAssets: 0,
+            totalBuyAmount: 0,
+          };
+        }
+  
+        const asset = acc[instrumentid];
+        asset.currentAssets += order.isBuy() ? order.size : -order.size;
+        asset.quantityOfBuy += order.isBuy() ? order.size : 0;
+  
+        const amount = parseFloat(order.size.toString()) * parseFloat(order.price);
+  
+        if (order.isBuy()) {
+          asset.totalBuyAmount += amount;
+        }
+  
+        return acc;
+      }, {} as IAssetsBalanceFromOrders);
 
-      if (!balance.assets[instrumentid]) {
-        balance.assets[instrumentid] = {
-          quantityOfBuy: 0,
-          quantityOfSell: 0,
-          currentAssets: 0,
-          totalBuyAmount: 0,
-          totalSellAmount: 0
+      return processedOrders;
+    } catch (error) {
+      this.logger.error('Error trying to calculateBalanceFromOrders', error);
+      throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+  }
+
+  private async calculateYieldFromAssets(assets: IAssetsBalanceFromOrders): Promise<IYieldFromAssets[]> {
+    try {
+      const instrumentsid = Object.keys(assets).map((instrumentid) => parseInt(instrumentid, 10));
+      const marketData = await this.marketService.getLastMarketData(instrumentsid);
+  
+      return instrumentsid.map((instrumentid) => {
+        const asset = assets[instrumentid];
+        const quantity = asset.currentAssets;
+  
+        const assetInMarket = marketData.find((md) => md.instrumentid === instrumentid);
+  
+        const lastMarketPrice = assetInMarket.close;
+        const averageBuyPrice = asset.totalBuyAmount / asset.quantityOfBuy;
+        const balance = quantity * lastMarketPrice;
+        const yieldAmount = (assetInMarket.close - averageBuyPrice).toFixed(2);
+        const yieldPercentage = (((assetInMarket.close - averageBuyPrice) / averageBuyPrice) * 100).toFixed(2);
+  
+        return {
+          instrumentid,
+          ticker: assetInMarket.instrument.ticker,
+          quantity,
+          lastMarketPrice,
+          averageBuyPrice,
+          balance,
+          yieldAmount,
+          yieldPercentage,
         };
-      }
-
-      const amount = parseFloat(order.size.toString()) * parseFloat(order.price);
-
-      const asset = balance.assets[instrumentid];
-      asset.currentAssets += order.side === ORDER_SIDE.BUY ? order.size : -order.size;
-      asset.quantityOfBuy += order.side === ORDER_SIDE.BUY ? order.size : 0;
-      asset.quantityOfSell += order.side === ORDER_SIDE.SELL ? order.size : 0;
-
-      if (order.side === ORDER_SIDE.BUY) {
-        asset.totalBuyAmount += amount
-      } else if (order.side === ORDER_SIDE.SELL) {
-        asset.totalSellAmount += amount
-      }
+      });
+    } catch (error) {
+      this.logger.error('Error trying to calculateYieldFromAssets', error);
+      throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
     }
   }
-  private async calculateYieldsFromAssetsBalance(assets: any): Promise<any> {
-    const assetsKey = Object.keys(assets);
 
-    const marketData = await this.marketService.getLastMarketData({
-      instruments: assetsKey.map(instrumentid => parseInt(instrumentid, 10)),
-    });
-
-    return assetsKey.map(instrumentId => {
-      const asset = assets[instrumentId];
-      const quantity = asset.currentAssets;
-
-      const averageBuyPrice = asset.totalBuyAmount / asset.quantityOfBuy;
-      // const averageSellPrice = asset.totalSellAmount / asset.quantityOfSell;
-
-      const assetInMarket = marketData.find(md => md.instrumentid == instrumentId)
-
-      return {
-        instrumentId,
-        ticker: assetInMarket.instrument.ticker,
-        quantity,
-        averageBuyPrice,
-        lastMarketPrice: assetInMarket.close,
-        balance: quantity * averageBuyPrice,
-        yield: (assetInMarket.close - averageBuyPrice).toFixed(2),
-        yielPercentage: (((assetInMarket.close - averageBuyPrice) / averageBuyPrice) * 100).toFixed(2),
-      }
-    });
+  private calculateBalanceInAssets(assets: IYieldFromAssets[]): number {
+    return assets.reduce((acc, assets) => acc += assets.balance, 0);
   }
 
 }

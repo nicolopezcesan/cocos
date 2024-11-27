@@ -10,5 +10,4 @@ export class User {
 
   @Column({ length: 20 })
   accountnumber: string;
-  // accountNumber: string; // VER POR QUÉ NO TOMA EL CHARACTER MAYUSC
 }

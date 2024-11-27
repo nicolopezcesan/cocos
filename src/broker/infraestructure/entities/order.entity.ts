@@ -1,16 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from './user.entity';
-import { Instrument } from './instrument.entity';
+import { InstrumentModel } from './instrument.entity';
 
 @Entity('orders')
-export class Order {
+export class OrderModel {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({type: 'numeric'}) // --
+  @Column({ type: 'numeric' })
   instrumentid: number;
 
-  @Column({type: 'numeric'}) // --
+  @Column({ type: 'numeric' })
   userid: number;
 
   @Column()
@@ -31,11 +37,11 @@ export class Order {
   @Column({ type: 'timestamp' })
   datetime: Date;
 
-  @ManyToOne(() => Instrument, instrument => instrument.orders)
-  @JoinColumn({ name: 'instrumentid' }) // -- si no pido la relación, no trae este campo
-  instrument: Instrument;
+  @ManyToOne(() => InstrumentModel, (instrument) => instrument.orders)
+  @JoinColumn({ name: 'instrumentid' })
+  instrument: InstrumentModel;
 
-  @ManyToOne(() => User, user => user.id)
-  @JoinColumn({ name: 'userid' }) // -- si no pido la relación, no trae este campo
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: 'userid' })
   user: User;
 }

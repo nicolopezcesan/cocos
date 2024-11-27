@@ -1,16 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, RelationId } from 'typeorm';
-import { Instrument } from './instrument.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { InstrumentModel } from './instrument.entity';
 
 @Entity('marketdata')
-export class MarketData {
+export class MarketDataModel {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Instrument)
-  @JoinColumn({ name: 'instrumentid' }) // -- no trae este campo
-  instrument: Instrument;
+  @ManyToOne(() => InstrumentModel)
+  @JoinColumn({ name: 'instrumentid' })
+  instrument: InstrumentModel;
 
-  @Column({type: 'numeric'})
+  @Column({ type: 'numeric' })
   instrumentid: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -26,7 +32,7 @@ export class MarketData {
   close: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  previousclose: number; // --> si usamos camelCase se rompe 
+  previousclose: number;
 
   @Column({ type: 'date' })
   date: Date;

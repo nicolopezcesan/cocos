@@ -15,6 +15,12 @@ export class CreateOrderValidationPipe implements PipeTransform {
       case ORDER_SIDE.SELL:
         await this.validateSellOrder(request);
         return request;
+      case ORDER_SIDE.CASH_IN:
+        await this.validateCashInOrder(request);
+        return request;
+      case ORDER_SIDE.CASH_OUT:
+        await this.validateCashOutOrder(request);
+        return request;
       default:
         throw new BadRequestException('Invalid order side');
     }
@@ -39,17 +45,23 @@ export class CreateOrderValidationPipe implements PipeTransform {
     }
 
     if (!order.size && !order.amount) {
-      throw new BadRequestException('Size or amount must be provided for MARKET orders');
+      throw new BadRequestException(
+        'Size or amount must be provided for MARKET orders',
+      );
     }
 
     if (order.size && order.amount) {
-      throw new BadRequestException('Cannot provide both size and amount for MARKET orders');
+      throw new BadRequestException(
+        'Cannot provide both size and amount for MARKET orders',
+      );
     }
   }
 
   private async validateLimitOrder(order: CreateOrderDto) {
     if (!order.size || !order?.price) {
-      throw new BadRequestException('Size or price must be provided for LIMIT orders');
+      throw new BadRequestException(
+        'Size or price must be provided for LIMIT orders',
+      );
     }
 
     if (order.size % 1 !== 0 || order.size <= 0) {
@@ -57,9 +69,33 @@ export class CreateOrderValidationPipe implements PipeTransform {
     }
   }
 
+  private async validateCashInOrder(order: CreateOrderDto) {
+    if (typeof order.instrumentid !== 'number') {
+      throw new BadRequestException('Order size must be a positive integer');
+    }
+
+    if (typeof order.size !== 'number' || order.size <= 0) {
+      throw new BadRequestException('Order size must be a positive integer');
+    }
+  }
+
+  private async validateCashOutOrder(order: CreateOrderDto) {
+    if (typeof order.instrumentid !== 'number') {
+      throw new BadRequestException('Instrument ID must be a positive integer');
+    }
+
+    if (typeof order.size !== 'number') {
+      throw new BadRequestException('Order size must be a positive integer');
+    }
+  }
+
   private async validateSellOrder(order: CreateOrderDto) {
-    // if (typeof order.size !== 'number') {
-    //   throw new BadRequestException('Order size must be a positive integer');
-    // }
+    if (typeof order.instrumentid !== 'number') {
+      throw new BadRequestException('Instrument ID must be a positive integer');
+    }
+
+    if (typeof order.size !== 'number') {
+      throw new BadRequestException('Order size must be a positive integer');
+    }
   }
 }

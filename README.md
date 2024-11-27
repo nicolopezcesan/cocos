@@ -1,4 +1,4 @@
-# cocos-challenge-backend
+## 📝 COCOS - Challenge Backend
 
 **Resumen:**
 Desarrollar una API que permita obtener la siguiente información a traves de endpoints:
@@ -20,9 +20,8 @@ Desarrollar una API que permita obtener la siguiente información a traves de en
   - A traves de este endpoint se podrá enviar una orden de compra o venta del activo.
   - Soportando dos tipos de ordenes: MARKET y LIMIT.
 
-## ------------------------------------------------------------------------------------------
 
-# Consideraciones funcionales
+## 🔄 Consideraciones funcionales
 - Estoy obviando las transacciones con status = NEW, no las considero para el balance disponible ni activo en la cartera (está en un limbo)
 - En la DB figura como BUY 20 / SELL 30 FILLED para el instrumento BMA (instrumentId 31) No debería ser correcto no ??? (existe una en NEW que compensa)
 
@@ -64,9 +63,7 @@ Desarrollar una API que permita obtener la siguiente información a traves de en
   # CASH IN - CASH OUT
   - Las transferencias entrantes y salientes se pueden modelar como ordenes. 
   - Las transferencias entrantes tiene side `CASH_IN` mientras que las salientes side `CASH_OUT`.
-  - Cuando una orden es ejecutada, se tiene que actualizar el listado de posiciones del usuario.  --------->> ?????
-
-## ------------------------------------------------------------------------------------------
+  - Cuando una orden es ejecutada, se tiene que actualizar el listado de posiciones del usuario.
 
 # Consideraciones técnicas
 - **Para la API REST**

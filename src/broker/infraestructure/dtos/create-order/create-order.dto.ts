@@ -1,11 +1,15 @@
 import { IsNumber, Min, IsOptional, IsEnum } from 'class-validator';
-import { ORDER_SIDE, ORDER_TYPE } from 'src/broker/infraestructure/enums/order.enum';
+import {
+  ORDER_SIDE,
+  ORDER_TYPE,
+} from 'src/broker/infraestructure/enums/order.enum';
 
 export class CreateOrderDto {
   @IsNumber()
   @Min(1)
   instrumentid: number;
 
+  @IsOptional()
   @IsEnum(ORDER_SIDE)
   side: ORDER_SIDE;
 

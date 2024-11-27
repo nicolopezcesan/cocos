@@ -1,39 +1,43 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './api/app.controller';
 import { GetPortfolioApp } from './application/get-portfolio/get-portfolio.application';
-// import { OperationRepository } from './infraestructure/repositories/operation.repository';
 import { BalanceService } from './infraestructure/services/balance.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Instrument } from './infraestructure/entities/instrument.entity';
-import { MarketData } from './infraestructure/entities/market-data.entity';
-import { Order } from './infraestructure/entities/order.entity';
+import { InstrumentModel } from './infraestructure/entities/instrument.entity';
+import { MarketDataModel } from './infraestructure/entities/market-data.entity';
+import { OrderModel } from './infraestructure/entities/order.entity';
 import { User } from './infraestructure/entities/user.entity';
 import { GetAssetsApp } from './application/get-assets/get-assets.application';
 import { CreateOrderApp } from './application/create-order/create-order.application';
 import { MarketService } from './infraestructure/services/market.service';
 import { OrderService } from './infraestructure/services/order.service';
+import { CreateOrderBuyApp } from './application/create-order/create-order-buy/create-order-buy.application';
+import { CreateOrderSellApp } from './application/create-order/create-order-sell/create-order-sell.application';
+import { CreateOrderCashInApp } from './application/create-order/create-order-cash-in/create-order-cash-in.application';
+import { CreateOrderCashOutApp } from './application/create-order/create-order-cash-out/create-order-cash-out.application';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Instrument,
-      MarketData,
-      Order,
-      User,
-    ])
-  ],
+  imports: [TypeOrmModule.forFeature([
+    InstrumentModel, 
+    MarketDataModel, 
+    OrderModel, 
+    User
+  ])],
   controllers: [AppController],
   providers: [
     // applications
     GetPortfolioApp,
     GetAssetsApp,
     CreateOrderApp,
+    CreateOrderBuyApp,
+    CreateOrderSellApp,
+    CreateOrderCashInApp,
+    CreateOrderCashOutApp,
     // services
     BalanceService,
     OrderService,
-    MarketService
+    MarketService,
     // repositories
   ],
 })
-
 export class BrokerModule {}
