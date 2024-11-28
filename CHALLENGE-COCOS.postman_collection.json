@@ -1,0 +1,319 @@
+{
+	"info": {
+		"_postman_id": "81ece1a9-20d3-42c4-ae84-33eaaad0a17e",
+		"name": "CHALLENGE-COCOS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19677045"
+	},
+	"item": [
+		{
+			"name": "/health",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "USER_ID",
+						"value": "1",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:3000/v1/health",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/portfolio",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "USER_ID",
+						"value": "3",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:3000/v1/portfolio",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"portfolio"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/assets",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "USER_ID",
+						"value": "1",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:3000/v1/assets?ticker=HA",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"assets"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "Grim",
+							"disabled": true
+						},
+						{
+							"key": "ticker",
+							"value": "HA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/create-order",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "USER_ID",
+						"value": "1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/v1/create-order",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"create-order"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "SELL",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "USER_ID",
+								"value": "3",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instrumentid\": 21,\r\n    \"side\": \"SELL\",\r\n    \"size\": 5\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/create-order",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"create-order"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "BUY - LIMIT",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "USER_ID",
+								"value": "3",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instrumentid\": 64,\r\n    \"side\": \"BUY\",\r\n    \"type\": \"LIMIT\",\r\n    \"size\": 2,\r\n    \"price\": 100\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/create-order",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"create-order"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "BUY - MARKET",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "USER_ID",
+								"value": "3",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instrumentid\": 21,\r\n    \"side\": \"BUY\",\r\n    \"type\": \"MARKET\",\r\n    // \"size\": 1\r\n    \"amount\": 10000\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/create-order",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"create-order"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "CASH_IN",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "USER_ID",
+								"value": "3",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instrumentid\": 46, // ARS\r\n    \"side\": \"CASH_IN\",\r\n    \"size\": 20000\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/create-order",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"create-order"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "CASH_OUT",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "USER_ID",
+								"value": "3",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instrumentid\": 46, // ARS\r\n    \"side\": \"CASH_OUT\",\r\n    \"size\": 6000\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/v1/create-order",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"create-order"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
+		}
+	]
+}
