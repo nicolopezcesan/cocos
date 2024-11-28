@@ -79,3 +79,24 @@ Como referencia, ya hemos creado una base de datos con las siguientes tablas y a
 - **marketdata**: id, instrumentId, high, low, open, close, previousClose, datetime
 
 La base de datos provista es un modelo funcional que sirve tal como está, aunque es una implementación básica. El candidato tiene la libertad de modificar, agregar o ajustar tablas según lo considere necesario para mejorar la performance del código, optimizar consultas, o por cualquier otra razón técnica relevante. Es importante justificar adecuadamente cualquier cambio en la documentación.
+
+## PARA REALIZAR PRUEBAS, SEGUIR LOS SIGUIENTES PASOS:
+
+## Create database service
+
+```bash
+$ docker compose up -d
+```
+
+## Running the app
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
+```
