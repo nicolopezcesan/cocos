@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class GetAssetsFilterDto {
+export class GetInstrumentsQueryFilter {
   @IsOptional()
   @IsString()
   name?: string;

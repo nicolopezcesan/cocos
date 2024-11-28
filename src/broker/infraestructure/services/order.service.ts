@@ -1,9 +1,10 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { OrderModel } from '../entities/order.entity';
 import { CreateOrderDto } from '../dtos/create-order/create-order.dto';
 import { ORDER_SIDE, ORDER_STATUS, ORDER_TYPE } from '../enums/order.enum';
+import { Order } from 'src/broker/domain/order.domain';
+import { OrderRepository } from '../repositories/order.repository';
 
 interface IOrderService {
   createCashInOrder(createOrderDto: CreateOrderDto, userid: number): Promise<any>;
@@ -24,9 +25,19 @@ export class OrderService implements IOrderService {
   private readonly logger = new Logger(OrderService.name);
 
   constructor(
-    @InjectRepository(OrderModel)
-    private readonly orderRepository: Repository<OrderModel>,
+    private readonly orderRepository: OrderRepository,
   ) { }
+
+  async getOrders(userId: number): Promise<Order[]> {
+    return await this.orderRepository.getOrders(userId);
+  }
+
+  async getOrdersByInstrument(instrumentId: number, userId: number,): Promise<Order[]> {
+    return await this.orderRepository.getOrdersByInstrument(
+      instrumentId,
+      userId
+    );
+  }
 
   async createCashInOrder(createOrderDto: CreateOrderDto, userid: number): Promise<any> {
     try {
@@ -39,7 +50,7 @@ export class OrderService implements IOrderService {
         price: 1,
       };
 
-      return await this.orderRepository.save(newOrder);
+      return await this.orderRepository.createOrder(newOrder);
     } catch (error) {
       this.logger.error('Error trying to create cash in order');
       throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
@@ -57,7 +68,7 @@ export class OrderService implements IOrderService {
         price: 1,
       };
 
-      return await this.orderRepository.save(newOrder);
+      return await this.orderRepository.createOrder(newOrder);
     } catch (error) {
       this.logger.error('Error trying to create cash out order');
       throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
@@ -66,7 +77,7 @@ export class OrderService implements IOrderService {
 
   async createBuyOrder(newOrder: any): Promise<any> {
     try {
-      return await this.orderRepository.save(newOrder);
+      return await this.orderRepository.createOrder(newOrder);
     } catch (error) {
       this.logger.error('Error trying to create a buy order');
       throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
@@ -86,7 +97,7 @@ export class OrderService implements IOrderService {
         userid,
       };
 
-      return await this.orderRepository.save(newOrder);
+      return await this.orderRepository.createOrder(newOrder);
     } catch (error) {
       this.logger.error('Error trying to create a sell order');
       throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);

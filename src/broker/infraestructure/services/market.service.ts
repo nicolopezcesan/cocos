@@ -3,9 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { MarketDataModel } from '../entities/market-data.entity';
 import { MarketData } from 'src/broker/domain/market-data.domain';
+import { Instrument } from 'src/broker/domain/instrument.domain';
+import { InstrumentRepository } from '../repositories/instrument.repository';
+import { GetInstrumentsQueryFilter } from '../dtos/get-assets/get-assets-filter.dto';
+import { MarketDataRepository } from '../repositories/market-data.repository';
 
 interface IMarketDataService {
-  getLastMarketData(instruments: Array<number>): Promise<MarketData[]>;
+  getLastMarketData(instruments: number[]): Promise<MarketData[]>;
+  getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilter): Promise<Instrument[]>;
 }
 
 @Injectable()
@@ -13,30 +18,15 @@ export class MarketService implements IMarketDataService {
   private readonly logger = new Logger(MarketService.name);
 
   constructor(
-    @InjectRepository(MarketDataModel)
-    private readonly marketDataRepository: Repository<MarketDataModel>,
+    private readonly marketDataRepository: MarketDataRepository,
+    private readonly instrumentRepository: InstrumentRepository,
   ) { }
 
-  async getLastMarketData(instruments?: Array<number>): Promise<MarketData[]> {
-    try {
-      const whereClause: any = {};
+  async getLastMarketData(instruments?: number[]): Promise<MarketData[]> {
+    return await this.marketDataRepository.getLastMarketData(instruments);
+  }
 
-      if (instruments?.length > 0) {
-        whereClause.instrumentid = In(instruments);
-      }
-
-      const data = await this.marketDataRepository.find({
-        relations: ['instrument'],
-        where: {
-          ...whereClause,
-          date: new Date('2023-07-15'),
-        },
-      });
-
-      return data.map((i) => new MarketData(i));
-    } catch (error) {
-      this.logger.error('Error trying to get last market data', error);
-      throw new HttpException(error, HttpStatus.SERVICE_UNAVAILABLE);
-    }
+  async getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilter): Promise<Instrument[]> {
+    return await this.instrumentRepository.getInstruments(getInstrumentsQueryFilter);
   }
 }

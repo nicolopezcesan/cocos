@@ -1,11 +1,10 @@
 import { Controller, HttpException, HttpStatus, Inject, Logger } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { number } from 'joi';
-import { async } from 'rxjs';
 import { IOrder } from 'src/broker/domain/order.domain';
 import { Portfolio } from 'src/broker/domain/portfolio.domain';
 import { BalanceService } from 'src/broker/infraestructure/services/balance.service';
 import { MarketService } from 'src/broker/infraestructure/services/market.service';
+import { OrderService } from 'src/broker/infraestructure/services/order.service';
 
 interface IGetPortfolioApp {
   execute(): Promise<Portfolio>;
@@ -35,12 +34,13 @@ export class GetPortfolioApp implements IGetPortfolioApp {
   constructor(
     private readonly balanceService: BalanceService,
     private readonly marketService: MarketService,
+    private readonly orderService: OrderService,
     @Inject(REQUEST) private request: Request & { userId: number },
   ) { }
 
   async execute(): Promise<Portfolio> {
     try {
-      const orders = await this.balanceService.getOrders(this.request.userId);
+      const orders = await this.orderService.getOrders(this.request.userId);
       const availableBalance = await this.balanceService.getAvailableBalanceByAccount(this.request.userId, orders);
   
       const assetsBalance = this.calculateBalanceFromOrders(orders);

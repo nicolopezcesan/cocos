@@ -18,36 +18,34 @@ export class CreateOrderSellApp {
   ) { }
 
   async execute(createOrderDto: CreateOrderDto): Promise<CreateOrderResponse> {
-    try {
-      await this.validateSellOrder(createOrderDto);
-      const [lastAssetPrice] = await this.marketService.getLastMarketData([createOrderDto.instrumentid]);
+    await this.validateSellOrder(createOrderDto);
+    const [lastAssetPrice] = await this.marketService.getLastMarketData([createOrderDto.instrumentid]);
 
-      await this.orderService.createSellOrder({
-        instrumentid: createOrderDto.instrumentid,
-        size: createOrderDto.size,
-        lastAssetPrice: lastAssetPrice.close,
-      } as createSellOrder, this.request.userId);
+    await this.orderService.createSellOrder({
+      instrumentid: createOrderDto.instrumentid,
+      size: createOrderDto.size,
+      lastAssetPrice: lastAssetPrice.close,
+    } as createSellOrder, this.request.userId);
 
-      return { message: 'Your assets were successfully sold' };
-    } catch (error) {
-      this.logger.error('Error trying to create a sell order', error);
-      throw new BadRequestException('Error trying to create a sell order');
-    }
+    return { message: 'Your assets were successfully sold' };
   }
 
   async validateSellOrder(createOrderDto: CreateOrderDto): Promise<any> {
     try {
-      const quantityOfAvailableAssets = await this.balanceService.getQuantityAssetByAccount(createOrderDto.instrumentid, this.request.userId);
-
+      const quantityOfAvailableAssets = await this.balanceService.getQuantityAssetByAccount(
+        createOrderDto.instrumentid, 
+        this.request.userId
+      );
+      
       if (quantityOfAvailableAssets < createOrderDto.size) {
-        this.logger.error('Balance cannot be less than the transaction amount');
-        throw new BadRequestException('Balance cannot be less than the transaction amount');
+        this.logger.error('You do not have the amount of assets you are requesting to sell');
+        throw new BadRequestException('You do not have the amount of assets you are requesting to sell');
       }
 
       return { quantityOfAvailableAssets };
     } catch (error) {
       this.logger.error('Error trying to validate a sell order');
-      throw new BadRequestException('Error trying to validate a sell order');
+      throw error;
     }
   }
 }

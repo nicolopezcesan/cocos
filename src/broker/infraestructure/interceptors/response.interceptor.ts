@@ -43,7 +43,8 @@ export class ResponseInterceptor implements NestInterceptor {
       statusCode: status,
       message: message,
       // @ts-ignore
-      data: error.message,
+      error: error.message,
+      data: null,
     });
   }
 

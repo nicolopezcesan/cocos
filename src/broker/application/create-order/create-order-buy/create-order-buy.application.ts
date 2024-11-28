@@ -111,7 +111,7 @@ export class CreateOrderBuyApp {
     return newOrder;
   }
 
-  private async getMarketData(instrumentsid: Array<number>): Promise<number> {
+  private async getMarketData(instrumentsid: number[]): Promise<number> {
     const [assetInMarket] = await this.marketService.getLastMarketData(instrumentsid);
     return parseFloat(assetInMarket.close.toString());
   }
