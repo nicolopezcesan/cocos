@@ -3,10 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { InstrumentModel } from '../entities/instrument.entity';
 import { Instrument } from 'src/broker/domain/instrument.domain';
-import { GetInstrumentsQueryFilter } from '../dtos/get-assets/get-assets-filter.dto';
+import { GetInstrumentsQueryFilterDto } from '../dtos/get-assets/get-assets-filter.dto';
 
 interface IInstrumentRepository {
-  getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilter): Promise<Instrument[]>
+  getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilterDto): Promise<Instrument[]>
 }
 
 @Injectable()
@@ -18,7 +18,7 @@ export class InstrumentRepository implements IInstrumentRepository {
     private readonly instrumentRepository: Repository<InstrumentModel>,
   ) { }
 
-  async getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilter): Promise<Instrument[]> {
+  async getInstruments(getInstrumentsQueryFilter: GetInstrumentsQueryFilterDto): Promise<Instrument[]> {
     try {
       const whereClause: any = {};
 
