@@ -1,4 +1,4 @@
-## 📝 COCOS - Challenge Backend
+## 📝 Challenge Backend
 
 **Resumen:**
 Desarrollar una API que permita obtener la siguiente información a traves de endpoints:
